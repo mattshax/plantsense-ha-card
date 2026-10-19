@@ -26,6 +26,7 @@ const PALETTE = {
   leaf: '#89B73F', // brand — healthy ring fill
   gold: '#E3A82E', // sun / light dial (distinct from the alert orange)
   orange: '#E8902B', // highlight — ALERTS ONLY (needs water / too wet / low batt)
+  danger: '#C7351F', // Offline — the app's danger colour (plantsense-mobile ThemeContext light)
   info: '#53B7FF', // humidity dial
   hair: '#E7E3D6', // hairline borders
   track: '#ECE8DC', // unfilled portion of a dial ring (warm stone)
@@ -43,6 +44,7 @@ const PALETTE_DARK = {
   accent: '#A8D14F', // brand-light — the accent on dark surfaces
   hair: '#2E3226', // gen.py DARK_LINE
   track: '#2E3226', // gen.py DARK_TRACK
+  danger: '#FF553E', // Offline — the app's danger colour (ThemeContext dark)
 };
 
 // Stroke glyphs (24x24) — the same paths as gen.py's _PATHS. No emoji.
@@ -346,12 +348,15 @@ class PlantSenseCard extends HTMLElement {
         --ps-ink: ${P.ink}; --ps-ink2: ${P.ink2}; --ps-mute: ${P.mute};
         --ps-accent: ${P.accent}; --ps-leaf: ${P.leaf}; --ps-orange: ${P.orange};
         --ps-hair: ${P.hair}; --ps-track: ${P.track}; --ps-surface: ${P.surface};
+        /* Offline pill: danger text, 40% (66) border, 9% (17) fill */
+        --ps-danger: ${P.danger}; --ps-danger-line: ${P.danger}66; --ps-danger-bg: ${P.danger}17;
       }
       :host([dark]) {
         --ps-paper: ${D.paper};
         --ps-ink: ${D.ink}; --ps-ink2: ${D.ink2}; --ps-mute: ${D.mute};
         --ps-accent: ${D.accent};
         --ps-hair: ${D.hair}; --ps-track: ${D.track}; --ps-surface: ${D.surface};
+        --ps-danger: ${D.danger}; --ps-danger-line: ${D.danger}66; --ps-danger-bg: ${D.danger}17;
       }
       ha-card {
         background: var(--ps-paper);
@@ -371,7 +376,8 @@ class PlantSenseCard extends HTMLElement {
         border: 1.5px solid var(--ps-hair); color: var(--ps-mute); white-space: nowrap;
       }
       .pill.ok { color: var(--ps-accent); border-color: ${P.leaf}66; background: rgba(137,183,63,.10); }
-      .pill.dry, .pill.wet, .pill.offline { color: var(--ps-orange); border-color: ${P.orange}66; background: rgba(232,144,43,.09); }
+      .pill.dry, .pill.wet { color: var(--ps-orange); border-color: ${P.orange}66; background: rgba(232,144,43,.09); }
+      .pill.offline { color: var(--ps-danger); border-color: var(--ps-danger-line); background: var(--ps-danger-bg); }
       .pill.none { color: var(--ps-mute); border-color: var(--ps-hair); background: rgba(139,144,126,.08); }
       /* dial grid */
       .dials {
