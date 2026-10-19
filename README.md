@@ -79,6 +79,7 @@ Tap a dial to open that entity's details and history.
 | `humidity` | entity id | — | Humidity sensor (`%`). |
 | `illuminance` | entity id | — | Light sensor (`lx`). `light` works too. |
 | `battery` | entity id | — | Battery sensor (`%`). The battery chip is hidden without it. |
+| `last_reading` | entity id | found automatically | The PlantSense integration's **Last reading** sensor. Normally found on its own from the device of the other entities. |
 | `moisture_min` | number | `15` | Below this the pill reads **Needs water** and the moisture ring turns orange. |
 | `moisture_max` | number | `60` | Above this the pill reads **Too wet**. |
 | `illuminance_max` | number | `20000` | Lux that fills the light ring. |
@@ -87,6 +88,12 @@ Tap a dial to open that entity's details and history.
 
 A missing or unavailable entity shows `—` with an empty ring; the card never
 errors on a partly configured or offline sensor.
+
+The sub-heading's "updated … ago" is when the sensor took its last reading,
+from the integration's **Last reading** sensor (with ESPHome entities, when
+Home Assistant last received a value). When the integration marks a sensor
+offline (no reading for more than 6 hours), its readings are unavailable and
+the pill reads **Offline**.
 
 > **Tune the moisture range per plant.** 15–60% suits a typical houseplant.
 > Succulents want it much lower (about 5–15%), tropicals a little higher
