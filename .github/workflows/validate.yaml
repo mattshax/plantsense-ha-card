@@ -1,0 +1,23 @@
+# HACS validation, as required for the HACS default repositories
+# (https://hacs.xyz/docs/publish/include) and the Home Assistant Marketplace
+# catalog (https://contributors.home-assistant.io/marketplace/reference/validation/).
+name: Validate
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  validate-hacs:
+    name: HACS validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: plugin
