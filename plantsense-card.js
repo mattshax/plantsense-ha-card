@@ -3,14 +3,16 @@
  *
  * Mirrors the PlantSense mobile app: a plant name, a status pill, and four
  * conic-gradient dial gauges (soil moisture / light / temperature / humidity),
- * with a small battery chip. Reads the ESPHome-native entities the device
- * auto-creates in HA (sensor.<device>_soil_moisture, ..._temperature,
- * ..._humidity, ..._light, ..._battery).
+ * with a small battery chip. Reads any entity ids you give it — the PlantSense
+ * integration's (sensor.<plant>_moisture, ..._temperature, ..._humidity,
+ * ..._illuminance, ..._battery) or a locally adopted ESPHome device's
+ * (sensor.plantsense_xxxxxx_soil_moisture, ..._light, ...).
  *
  * Self-contained: no build step, no external dependencies. HA loads this file
  * as a JS-module Lovelace resource. The visual approach (conic-gradient rings
- * with an icon + value + uppercase label) matches the app's marketing dials in
- * plantsense-mobile/store-assets/gen.py.
+ * with an icon + value + uppercase label), the stroke glyphs and the dark
+ * palette match the app's marketing dials in plantsense-mobile/store-assets/gen.py.
+ * Follows Home Assistant's light/dark theme (hass.themes.darkMode).
  */
 
 // --- "Grove" brand palette (mirrors plantsense-web globals.css / gen.py) -----
@@ -29,6 +31,31 @@ const PALETTE = {
   track: '#ECE8DC', // unfilled portion of a dial ring (warm stone)
 };
 
+// Dark theme — the dashboard's .dark surfaces (plantsense-dashboard index.css)
+// with gen.py's dark dial tokens (DARK_CARD / DARK_TRACK / CREAM / LEAF_LIGHT).
+// Leaf, gold, orange and info stay the same in both themes.
+const PALETTE_DARK = {
+  paper: '#14180F', // dashboard --surface (dark)
+  surface: '#1E2117', // gen.py DARK_CARD — ring centre
+  ink: '#FAF8F2', // gen.py CREAM
+  ink2: 'rgba(250,248,242,.72)', // gen.py CREAM2
+  mute: 'rgba(250,248,242,.5)', // gen.py CREAM3
+  accent: '#A8D14F', // brand-light — the accent on dark surfaces
+  hair: '#2E3226', // gen.py DARK_LINE
+  track: '#2E3226', // gen.py DARK_TRACK
+};
+
+// Stroke glyphs (24x24) — the same paths as gen.py's _PATHS. No emoji.
+const GLYPHS = {
+  drop: '<path d="M12 2.7C12 2.7 5.5 9.5 5.5 14a6.5 6.5 0 0 0 13 0c0-4.5-6.5-11.3-6.5-11.3z"/>',
+  thermo: '<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/>',
+  humidity:
+    '<path d="M8 3.5C8 3.5 4.5 7.5 4.5 10.2a3.5 3.5 0 0 0 7 0C11.5 7.5 8 3.5 8 3.5z"/>' +
+    '<path d="M16 9c0 0-3.5 4-3.5 6.7a3.5 3.5 0 0 0 7 0C19.5 13 16 9 16 9z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  battery: '<rect x="2" y="7" width="18" height="10" rx="2"/><path d="M22 11v2"/>',
+};
+
 // --- Config defaults ---------------------------------------------------------
 // The moisture healthy band drives the status pill AND the moisture ring colour
 // (green in-range, orange out-of-range — same behaviour as the app). Light and
@@ -41,8 +68,15 @@ const DEFAULTS = {
   moisture_max: 60, // % — above this "Too wet". See plantsense-infra/homeassistant/
                     // plantsense-plant-thresholds.md — succulents 5–15, tropicals 25–60.
   illuminance_max: 20000, // lux mapped to a full light ring
-  temperature_min: 10, // maps to an empty temperature ring
-  temperature_max: 35, // maps to a full temperature ring
+  temperature_min: 10, // °C — maps to an empty temperature ring
+  temperature_max: 35, // °C — maps to a full temperature ring
+};
+
+// The same ring range for a temperature entity reported in °F (HA converts the
+// integration's °C to the user's unit system). Used unless the YAML sets its own.
+const DEFAULTS_F = {
+  temperature_min: 50,
+  temperature_max: 95,
 };
 
 const VERSION = '1.0.0';
@@ -51,6 +85,7 @@ class PlantSenseCard extends HTMLElement {
   constructor() {
     super();
     this._config = null;
+    this._userConfig = {}; // the YAML as given, to tell explicit options from defaults
     this._hass = null;
     this._root = null; // the content container we re-render into
     this.attachShadow({ mode: 'open' });
@@ -67,6 +102,7 @@ class PlantSenseCard extends HTMLElement {
     }
     // Accept `illuminance` (documented) or `light` (ESPHome entity noun) alias.
     const illuminance = config.illuminance || config.light || null;
+    this._userConfig = config;
     this._config = {
       ...DEFAULTS,
       ...config,
@@ -85,6 +121,8 @@ class PlantSenseCard extends HTMLElement {
   set hass(hass) {
     const prev = this._hass;
     this._hass = hass;
+    // Theme colours are CSS variables keyed off this attribute — no re-render needed.
+    this.toggleAttribute('dark', !!(hass.themes && hass.themes.darkMode));
     if (!this._config) return;
     if (!prev || !this._root || this._entitiesChanged(prev, hass)) {
       this._render();
@@ -155,6 +193,11 @@ class PlantSenseCard extends HTMLElement {
     const status = this._moistureStatus(moisture.value);
     const moistureColor = status.kind === 'ok' || status.kind === 'none' ? PALETTE.leaf : PALETTE.orange;
 
+    // Ring range in the entity's own unit unless the YAML sets one explicitly.
+    const tempDefaults = temp.unit === '°F' ? DEFAULTS_F : DEFAULTS;
+    const tMin = 'temperature_min' in this._userConfig ? c.temperature_min : tempDefaults.temperature_min;
+    const tMax = 'temperature_max' in this._userConfig ? c.temperature_max : tempDefaults.temperature_max;
+
     // Ring fill fractions (0-100). Missing readings render an empty track.
     const moisturePct = clamp(moisture.value, 0, 100);
     const humidityPct = clamp(humidity.value, 0, 100);
@@ -162,13 +205,13 @@ class PlantSenseCard extends HTMLElement {
     const tempPct =
       temp.value == null
         ? null
-        : clamp(((temp.value - c.temperature_min) / (c.temperature_max - c.temperature_min)) * 100, 0, 100);
+        : clamp(((temp.value - tMin) / (tMax - tMin)) * 100, 0, 100);
 
     const dials =
-      this._dial('moisture', c.moisture, '💧', fmtPct(moisture.value), 'Moisture', moisturePct, moistureColor) +
-      this._dial('illuminance', c.illuminance, '☀', fmtLux(light.value), 'Light', lightPct, PALETTE.gold) +
-      this._dial('temperature', c.temperature, '🌡', fmtTemp(temp.value), 'Temp', tempPct, PALETTE.leaf) +
-      this._dial('humidity', c.humidity, '💨', fmtPct(humidity.value), 'Humidity', humidityPct, PALETTE.info);
+      this._dial('moisture', c.moisture, 'drop', fmtPct(moisture.value), 'Moisture', moisturePct, moistureColor) +
+      this._dial('illuminance', c.illuminance, 'sun', fmtLux(light.value), 'Light', lightPct, PALETTE.gold) +
+      this._dial('temperature', c.temperature, 'thermo', fmtTemp(temp.value), 'Temp', tempPct, PALETTE.leaf) +
+      this._dial('humidity', c.humidity, 'humidity', fmtPct(humidity.value), 'Humidity', humidityPct, PALETTE.info);
 
     // Sub-heading: "<location> · updated <relative>".
     const subParts = [];
@@ -181,10 +224,10 @@ class PlantSenseCard extends HTMLElement {
     let batteryChip = '';
     if (c.battery) {
       const low = battery.value != null && battery.value < 20;
-      const bColor = low ? PALETTE.orange : PALETTE.mute;
+      const bColor = low ? 'var(--ps-orange)' : 'var(--ps-mute)';
       batteryChip =
         `<div class="battery" style="color:${bColor}">` +
-        `<span class="bic">🔋</span>${battery.value == null ? '—' : Math.round(battery.value) + '%'}</div>`;
+        `${glyph('battery', 16, 'currentColor')}${battery.value == null ? '—' : Math.round(battery.value) + '%'}</div>`;
     }
 
     this._root.innerHTML =
@@ -198,15 +241,15 @@ class PlantSenseCard extends HTMLElement {
   }
 
   /** One conic-gradient dial. `pct` null → empty track (no reading). */
-  _dial(key, entityId, icon, valueText, label, pct, color) {
+  _dial(key, entityId, glyphName, valueText, label, pct, color) {
     const deg = pct == null ? 0 : Math.round(pct * 3.6);
     const attr = entityId ? ` data-entity="${esc(entityId)}"` : '';
     const clickable = entityId ? ' clickable' : '';
     return (
       `<div class="dial${clickable}"${attr}>` +
-      `<div class="ring" style="background:conic-gradient(${color} ${deg}deg, ${PALETTE.track} 0deg)">` +
+      `<div class="ring" style="background:conic-gradient(${color} ${deg}deg, var(--ps-track) 0deg)">` +
       `<div class="ring-in">` +
-      `<div class="ic">${icon}</div>` +
+      `<div class="ic">${glyph(glyphName, 24, color)}</div>` +
       `<div class="val">${valueText}</div>` +
       `</div></div>` +
       `<div class="dlabel">${label}</div>` +
@@ -235,7 +278,7 @@ class PlantSenseCard extends HTMLElement {
     const then = new Date(iso).getTime();
     if (Number.isNaN(then)) return null;
     const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
-    if (s < 45) return 'just now';
+    if (s < 60) return 'just now';
     const m = Math.floor(s / 60);
     if (m < 60) return `${m} min ago`;
     const h = Math.floor(m / 60);
@@ -246,18 +289,26 @@ class PlantSenseCard extends HTMLElement {
 
   _css() {
     const P = PALETTE;
+    const D = PALETTE_DARK;
     return `
       :host {
+        --ps-paper: ${P.paper};
         --ps-ink: ${P.ink}; --ps-ink2: ${P.ink2}; --ps-mute: ${P.mute};
         --ps-accent: ${P.accent}; --ps-leaf: ${P.leaf}; --ps-orange: ${P.orange};
         --ps-hair: ${P.hair}; --ps-track: ${P.track}; --ps-surface: ${P.surface};
       }
+      :host([dark]) {
+        --ps-paper: ${D.paper};
+        --ps-ink: ${D.ink}; --ps-ink2: ${D.ink2}; --ps-mute: ${D.mute};
+        --ps-accent: ${D.accent};
+        --ps-hair: ${D.hair}; --ps-track: ${D.track}; --ps-surface: ${D.surface};
+      }
       ha-card {
-        background: ${P.paper};
+        background: var(--ps-paper);
         border: 1px solid var(--ps-hair);
         border-radius: 18px;
         overflow: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         -webkit-font-smoothing: antialiased;
       }
       .ps-root { padding: 16px 18px 18px; }
@@ -287,7 +338,7 @@ class PlantSenseCard extends HTMLElement {
         width: 78%; height: 78%; background: var(--ps-surface); border-radius: 50%;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
       }
-      .ic { font-size: 24px; line-height: 1; }
+      .ic { line-height: 0; }
       .val { font-size: 22px; font-weight: 700; color: var(--ps-ink); margin-top: 4px; letter-spacing: -0.5px; }
       .dlabel {
         font-size: 11px; font-weight: 700; color: var(--ps-mute); margin-top: 10px;
@@ -296,7 +347,6 @@ class PlantSenseCard extends HTMLElement {
       /* battery footer */
       .foot { display: flex; justify-content: center; margin-top: 16px; }
       .battery { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
-      .bic { font-size: 15px; }
     `;
   }
 
@@ -336,6 +386,14 @@ function fmtLux(v) {
   if (v >= 10000) return Math.round(v / 1000) + 'k';
   if (v >= 1000) return (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
   return String(Math.round(v));
+}
+
+// One gen.py stroke glyph as inline SVG, stroked in `color`.
+function glyph(name, size, color) {
+  return (
+    `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="${color}" ` +
+    `stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:block">${GLYPHS[name]}</svg>`
+  );
 }
 
 // Escape user-supplied text before it goes into innerHTML.
