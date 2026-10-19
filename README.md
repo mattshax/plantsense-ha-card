@@ -96,3 +96,7 @@ errors on a partly configured or offline sensor.
 
 Questions and bug reports:
 <https://github.com/mattshax/plantsense-ha-card/issues>
+
+## License
+
+[MIT](LICENSE)
