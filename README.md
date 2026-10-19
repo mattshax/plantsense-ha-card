@@ -1,130 +1,98 @@
 # PlantSense Card
 
-A custom [Lovelace](https://www.home-assistant.io/dashboards/) card for Home
-Assistant that shows a PlantSense sensor the way the mobile app does: the plant
-name, a **Healthy / Needs water** status pill, and four circular dial gauges for
-**soil moisture, light, temperature and humidity** — plus a battery chip.
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mattshax&repository=plantsense-ha-card&category=plugin)
+[![Validate](https://github.com/mattshax/plantsense-ha-card/actions/workflows/validate.yaml/badge.svg)](https://github.com/mattshax/plantsense-ha-card/actions/workflows/validate.yaml)
 
-PlantSense is an **ESPHome-native** device. It's auto-discovered by Home
-Assistant on your local network, runs entirely locally, and needs **no
-PlantSense cloud account**. This card just reads the entities the device
-already exposes.
+A dashboard card for Home Assistant that shows a [PlantSense](https://myplantsense.com)
+soil sensor the way the PlantSense app does: the plant name, a **Healthy /
+Needs water / Too wet** status pill, and dials for **soil moisture, light,
+temperature and humidity**, plus the battery level. It follows Home
+Assistant's light and dark themes.
 
-![PlantSense card — healthy and needs-water states](docs/screenshot.png)
+![PlantSense cards on a Home Assistant dashboard, light theme](https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-light.png)
 
-> _`docs/screenshot.png` is a render of the card in its healthy and needs-water
-> states. Swap it for a capture from your own dashboard when you like._
-
----
+![The same cards in the dark theme](https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-dark.png)
 
 ## Requirements
 
-- Home Assistant with a PlantSense device adopted via
-  [ESPHome](https://www.home-assistant.io/integrations/esphome/) (auto-discovered
-  under **Settings → Devices & Services**).
-- The device exposes these entities (the `plantsense_xxxxxx` part is your
-  device's MAC-suffixed name — copy the real prefix from any of its entities):
+PlantSense sensors in Home Assistant, through either:
 
-  | Dial / field | Entity | Unit |
-  |---|---|---|
-  | Soil moisture | `sensor.plantsense_xxxxxx_soil_moisture` | % |
-  | Temperature (ambient) | `sensor.plantsense_xxxxxx_temperature` | °C |
-  | Humidity | `sensor.plantsense_xxxxxx_humidity` | % |
-  | Light | `sensor.plantsense_xxxxxx_light` | lux |
-  | Battery | `sensor.plantsense_xxxxxx_battery` | % |
+- the [PlantSense integration](https://github.com/mattshax/plantsense-ha-integration)
+  (recommended): reads your sensors from your PlantSense account, so readings
+  are there even while a sensor sleeps. Entities look like
+  `sensor.fiddle_leaf_fig_moisture`, named after your plant; or
+- a sensor adopted locally through
+  [ESPHome](https://www.home-assistant.io/integrations/esphome/). Entities look
+  like `sensor.plantsense_a1b2c3_soil_moisture`.
 
----
+The card only reads entities, so it works the same with either.
 
 ## Installation
 
-### Option A — HACS (recommended)
+### HACS (recommended)
 
-This repo is a HACS **Lovelace / Dashboard** plugin.
+1. Open **HACS** in Home Assistant, or use the **Open in HACS** button above.
+2. Search for **PlantSense Card** and click **Download**.
+   - Not listed yet? In HACS, open the menu (top right) → **Custom
+     repositories**, add `https://github.com/mattshax/plantsense-ha-card` with
+     type **Dashboard**, then search again.
+3. HACS adds the dashboard resource for you. Reload your browser so the card
+   loads.
 
-1. In HACS, open the top-right menu → **Custom repositories**.
-2. Add this repository URL and pick category **Dashboard** (a.k.a. Lovelace /
-   Plugin).
-3. Find **PlantSense Card** in HACS and click **Download**.
-4. HACS registers the JS resource for you. Hard-refresh your browser
-   (Ctrl/Cmd-Shift-R) so the new card loads.
-
-### Option B — Manual
+### Manual
 
 1. Copy `plantsense-card.js` to `config/www/plantsense-card.js` on your Home
-   Assistant instance (the `www/` folder is served at `/local/`).
-2. Register it as a dashboard resource — **Settings → Dashboards → ⋮ →
-   Resources → Add resource**:
-   - **URL:** `/local/plantsense-card.js`
-   - **Type:** `JavaScript Module`
-   
-   (Or in YAML mode, under `lovelace:` → `resources:` add
+   Assistant (the `www/` folder is served at `/local/`).
+2. Add it as a dashboard resource: **Settings → Dashboards → ⋮ → Resources →
+   Add resource**, URL `/local/plantsense-card.js`, type **JavaScript module**.
+   (In YAML mode: under `lovelace:` → `resources:`, add
    `- url: /local/plantsense-card.js` with `type: module`.)
-3. Hard-refresh your browser.
-
----
+3. Reload your browser.
 
 ## Usage
 
-Add a **Manual** card (or pick **PlantSense Card** from the "Add card" picker)
-and use:
+Edit a dashboard, **Add card**, and pick **PlantSense Card**. With the
+PlantSense integration installed, the card fills in your first sensor; change
+the entities to show another one. Or add it in YAML:
 
 ```yaml
 type: custom:plantsense-card
-name: Monstera
+name: Fiddle Leaf Fig
 location: Living room
-moisture: sensor.plantsense_a1b2c3_soil_moisture
-temperature: sensor.plantsense_a1b2c3_temperature
-humidity: sensor.plantsense_a1b2c3_humidity
-illuminance: sensor.plantsense_a1b2c3_light
-battery: sensor.plantsense_a1b2c3_battery
+moisture: sensor.fiddle_leaf_fig_moisture
+temperature: sensor.fiddle_leaf_fig_temperature
+humidity: sensor.fiddle_leaf_fig_humidity
+illuminance: sensor.fiddle_leaf_fig_illuminance
+battery: sensor.fiddle_leaf_fig_battery
 ```
 
-Tapping any dial opens that entity's more-info / history dialog.
+Tap a dial to open that entity's details and history.
 
 ### Options
 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `name` | string | `PlantSense` | Plant name shown in the header. |
-| `location` | string | — | Optional sub-heading (e.g. a room). |
+| `location` | string | — | Optional sub-heading, e.g. a room. |
 | `moisture` | entity id | — | Soil-moisture sensor (`%`). Drives the status pill. |
 | `temperature` | entity id | — | Temperature sensor. |
 | `humidity` | entity id | — | Humidity sensor (`%`). |
-| `illuminance` | entity id | — | Light sensor (`lux`). Alias: `light`. |
-| `battery` | entity id | — | Battery sensor (`%`). Chip hides if unset. |
-| `moisture_min` | number | `30` | Below this the pill reads **Needs water** and the moisture ring turns orange. |
-| `moisture_max` | number | `70` | Above this the pill reads **Too wet**. |
-| `illuminance_max` | number | `20000` | Lux that fills the light ring 100%. |
-| `temperature_min` | number | `10` | Value that maps to an empty temperature ring. |
-| `temperature_max` | number | `35` | Value that maps to a full temperature ring. |
+| `illuminance` | entity id | — | Light sensor (`lx`). `light` works too. |
+| `battery` | entity id | — | Battery sensor (`%`). The battery chip is hidden without it. |
+| `moisture_min` | number | `15` | Below this the pill reads **Needs water** and the moisture ring turns orange. |
+| `moisture_max` | number | `60` | Above this the pill reads **Too wet**. |
+| `illuminance_max` | number | `20000` | Lux that fills the light ring. |
+| `temperature_min` | number | `10` (°C) / `50` (°F) | Temperature of an empty ring, in the sensor's unit. |
+| `temperature_max` | number | `35` (°C) / `95` (°F) | Temperature of a full ring, in the sensor's unit. |
 
-Any missing or `unavailable` entity renders as `—` with an empty ring; the card
-never errors on a partially-configured or offline device.
+A missing or unavailable entity shows `—` with an empty ring; the card never
+errors on a partly configured or offline sensor.
 
-> **Tune the healthy range per plant.** `30–70%` is a generic houseplant band.
-> Succulents want it much lower (~5–15%), tropicals higher. The repo's
-> `plantsense-infra/homeassistant/plantsense-plant-thresholds.md` has per-metric
-> guidance.
+> **Tune the moisture range per plant.** 15–60% suits a typical houseplant.
+> Succulents want it much lower (about 5–15%), tropicals a little higher
+> (about 25–60%). The PlantSense app shows the range for your plant.
 
----
+## Support
 
-## A note on battery devices (deep sleep)
-
-PlantSense is a battery sensor that **deep-sleeps ~90 minutes** between short
-wake cycles. Over a persistent ESPHome API connection, Home Assistant marks the
-entities *unavailable* while the device sleeps. Two ways to keep the card
-showing the latest reading:
-
-- **Mains-powered / always-on unit:** the native ESPHome API stays connected —
-  live updates, nothing extra to do.
-- **Battery unit:** use the opt-in MQTT path with availability reporting
-  disabled, so HA **retains the last value** across the sleep window. See
-  `plantsense-esphome/HOME-ASSISTANT.md` for setup.
-
-The card reads the same entity ids either way.
-
----
-
-## License
-
-Part of the PlantSense project.
+Questions and bug reports:
+<https://github.com/mattshax/plantsense-ha-card/issues>
