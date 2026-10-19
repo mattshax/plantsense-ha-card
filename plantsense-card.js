@@ -350,9 +350,11 @@ class PlantSenseCard extends HTMLElement {
     `;
   }
 
-  // Card-picker stub config (prefills the visual editor with placeholders).
-  static getStubConfig() {
-    return {
+  // Card-picker stub config. Prefills the first device of the PlantSense
+  // integration when there is one (so the picker preview shows real readings),
+  // otherwise ESPHome-style placeholders to edit.
+  static getStubConfig(hass) {
+    const stub = {
       type: 'custom:plantsense-card',
       name: 'Monstera',
       location: 'Living room',
@@ -361,6 +363,29 @@ class PlantSenseCard extends HTMLElement {
       humidity: 'sensor.plantsense_xxxxxx_humidity',
       illuminance: 'sensor.plantsense_xxxxxx_light',
       battery: 'sensor.plantsense_xxxxxx_battery',
+    };
+    const registry = (hass && hass.entities) || {};
+    const byDevice = {};
+    for (const [entityId, entry] of Object.entries(registry)) {
+      if (entry.platform !== 'plantsense' || !entry.device_id) continue;
+      (byDevice[entry.device_id] = byDevice[entry.device_id] || []).push(entityId);
+    }
+    const deviceId = Object.keys(byDevice)[0];
+    if (!deviceId) return stub;
+    const ids = byDevice[deviceId];
+    // Match on device class first (survives renamed entity ids), entity id suffix second.
+    const pick = (deviceClass, suffix) =>
+      ids.find((id) => ((hass.states[id] || {}).attributes || {}).device_class === deviceClass) ||
+      ids.find((id) => id.endsWith(`_${suffix}`));
+    const device = (hass.devices || {})[deviceId] || {};
+    return {
+      type: 'custom:plantsense-card',
+      name: device.name_by_user || device.name || 'PlantSense',
+      moisture: pick('moisture', 'moisture'),
+      temperature: pick('temperature', 'temperature'),
+      humidity: pick('humidity', 'humidity'),
+      illuminance: pick('illuminance', 'illuminance'),
+      battery: pick('battery', 'battery'),
     };
   }
 }
@@ -415,7 +440,7 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'plantsense-card',
   name: 'PlantSense Card',
-  description: 'Plant health at a glance — moisture, light, temperature and humidity dials for an ESPHome PlantSense sensor.',
+  description: 'Plant health at a glance — moisture, light, temperature and humidity dials for a PlantSense sensor.',
   preview: true,
   documentationURL: 'https://myplantsense.com/docs/home-assistant',
 });
