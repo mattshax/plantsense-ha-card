@@ -108,6 +108,7 @@ class PlantSenseCard extends HTMLElement {
       ...config,
       illuminance,
     };
+    this._lastReadingId = undefined; // re-resolved on the next render
     // Force a rebuild of the DOM skeleton on the next render.
     this._root = null;
     if (this._hass) this._render();
@@ -124,6 +125,7 @@ class PlantSenseCard extends HTMLElement {
     // Theme colours are CSS variables keyed off this attribute — no re-render needed.
     this.toggleAttribute('dark', !!(hass.themes && hass.themes.darkMode));
     if (!this._config) return;
+    if (prev && prev.entities !== hass.entities) this._lastReadingId = undefined;
     if (!prev || !this._root || this._entitiesChanged(prev, hass)) {
       this._render();
     }
@@ -136,7 +138,35 @@ class PlantSenseCard extends HTMLElement {
   // Entity ids we depend on, for the change check + more-info wiring.
   _watchedEntities() {
     const c = this._config;
-    return [c.moisture, c.temperature, c.humidity, c.illuminance, c.battery].filter(Boolean);
+    return [c.moisture, c.temperature, c.humidity, c.illuminance, c.battery, this._lastReadingEntity()].filter(Boolean);
+  }
+
+  /**
+   * The PlantSense integration's "Last reading" timestamp entity: `last_reading`
+   * from the YAML, else the integration's timestamp sensor on the same device
+   * as the configured entities. null when there is none (e.g. ESPHome entities).
+   */
+  _lastReadingEntity() {
+    if (this._lastReadingId !== undefined) return this._lastReadingId;
+    const c = this._config;
+    let found = c.last_reading || null;
+    const registry = (this._hass && this._hass.entities) || {};
+    if (!found) {
+      const anchor = [c.moisture, c.temperature, c.humidity, c.illuminance, c.battery].find((id) => id && registry[id]);
+      const deviceId = anchor && registry[anchor].device_id;
+      if (deviceId) {
+        found =
+          Object.keys(registry).find(
+            (id) =>
+              registry[id].device_id === deviceId &&
+              registry[id].platform === 'plantsense' &&
+              (((this._hass.states[id] || {}).attributes || {}).device_class === 'timestamp')
+          ) || null;
+      }
+    }
+    // Cache only once hass is here; before that the registry is unknown.
+    if (this._hass) this._lastReadingId = found;
+    return found;
   }
 
   _entitiesChanged(prev, next) {
@@ -168,6 +198,13 @@ class PlantSenseCard extends HTMLElement {
     return out;
   }
 
+  // A timestamp entity's state as an ISO string, or null when it has none.
+  _readTime(entityId) {
+    const st = entityId && this._hass && this._hass.states[entityId];
+    if (!st || Number.isNaN(new Date(st.state).getTime())) return null;
+    return st.state;
+  }
+
   // Moisture status → pill + moisture ring colour.
   _moistureStatus(mVal) {
     const { moisture_min: lo, moisture_max: hi } = this._config;
@@ -190,8 +227,21 @@ class PlantSenseCard extends HTMLElement {
     const light = this._read(c.illuminance);
     const battery = this._read(c.battery);
 
-    const status = this._moistureStatus(moisture.value);
-    const moistureColor = status.kind === 'ok' || status.kind === 'none' ? PALETTE.leaf : PALETTE.orange;
+    // When the sensor last reported: the integration's "Last reading" entity
+    // when there is one, else (e.g. ESPHome) when HA last updated the readings.
+    const lastReadingId = this._lastReadingEntity();
+    const lastReading = lastReadingId
+      ? this._readTime(lastReadingId)
+      : moisture.lastUpdated || temp.lastUpdated || humidity.lastUpdated || light.lastUpdated;
+
+    // The integration makes every reading unavailable when the sensor has been
+    // silent too long (6 h, as in the app) but keeps its Last reading: Offline.
+    const allMissing = [moisture, temp, humidity, light].every((r) => r.value == null);
+    const status =
+      lastReadingId && lastReading && allMissing
+        ? { text: 'Offline', kind: 'offline' }
+        : this._moistureStatus(moisture.value);
+    const moistureColor = status.kind === 'dry' || status.kind === 'wet' ? PALETTE.orange : PALETTE.leaf;
 
     // Ring range in the entity's own unit unless the YAML sets one explicitly.
     const tempDefaults = temp.unit === '°F' ? DEFAULTS_F : DEFAULTS;
@@ -216,7 +266,7 @@ class PlantSenseCard extends HTMLElement {
     // Sub-heading: "<location> · updated <relative>".
     const subParts = [];
     if (c.location) subParts.push(esc(c.location));
-    const ago = this._ago(moisture.lastUpdated || temp.lastUpdated || humidity.lastUpdated || light.lastUpdated);
+    const ago = this._ago(lastReading);
     if (ago) subParts.push('updated ' + ago);
     const subhead = subParts.join(' · ');
 
@@ -321,7 +371,7 @@ class PlantSenseCard extends HTMLElement {
         border: 1.5px solid var(--ps-hair); color: var(--ps-mute); white-space: nowrap;
       }
       .pill.ok { color: var(--ps-accent); border-color: ${P.leaf}66; background: rgba(137,183,63,.10); }
-      .pill.dry, .pill.wet { color: var(--ps-orange); border-color: ${P.orange}66; background: rgba(232,144,43,.09); }
+      .pill.dry, .pill.wet, .pill.offline { color: var(--ps-orange); border-color: ${P.orange}66; background: rgba(232,144,43,.09); }
       .pill.none { color: var(--ps-mute); border-color: var(--ps-hair); background: rgba(139,144,126,.08); }
       /* dial grid */
       .dials {
