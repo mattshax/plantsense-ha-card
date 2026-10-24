@@ -38,9 +38,6 @@ The card only reads entities, so it works the same with either.
 
 1. Open **HACS** in Home Assistant, or use the **Open in HACS** button above.
 2. Search for **PlantSense Card** and click **Download**.
-   - Not listed yet? In HACS, open the menu (top right) → **Custom
-     repositories**, add `https://github.com/mattshax/plantsense-ha-card` with
-     type **Dashboard**, then search again.
 3. HACS adds the dashboard resource for you. Reload your browser so the card
    loads.
 
