@@ -81,7 +81,7 @@ const DEFAULTS_F = {
   temperature_max: 95,
 };
 
-const VERSION = '1.2.1';
+const VERSION = '1.2.2';
 
 class PlantSenseCard extends HTMLElement {
   constructor() {
