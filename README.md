@@ -9,6 +9,11 @@ Needs water / Too wet** status pill, and dials for **soil moisture, light,
 temperature and humidity**, plus the battery level. It follows Home
 Assistant's light and dark themes.
 
+[PlantSense](https://myplantsense.com) is a WiFi soil sensor for house plants
+and garden beds: soil moisture, temperature, humidity and light, weeks on a
+USB-C rechargeable battery, no hub and no subscription. Don't have one yet?
+See [myplantsense.com/shop](https://myplantsense.com/shop).
+
 ![PlantSense cards on a Home Assistant dashboard, light theme](https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-light.png)
 
 ![The same cards in the dark theme](https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-dark.png)
@@ -38,6 +43,10 @@ The card only reads entities, so it works the same with either.
      type **Dashboard**, then search again.
 3. HACS adds the dashboard resource for you. Reload your browser so the card
    loads.
+
+From Home Assistant 2026.11, HACS is built in as the **Marketplace**: go to
+**Settings → Marketplace**, search for **PlantSense Card**, select
+**Install**, and reload your browser.
 
 ### Manual
 
@@ -106,4 +115,4 @@ Questions and bug reports:
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/mattshax/plantsense-ha-card/blob/main/LICENSE)
