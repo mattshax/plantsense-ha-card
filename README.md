@@ -4,9 +4,9 @@
 [![Validate](https://github.com/mattshax/plantsense-ha-card/actions/workflows/validate.yaml/badge.svg)](https://github.com/mattshax/plantsense-ha-card/actions/workflows/validate.yaml)
 
 A dashboard card for Home Assistant that shows a [PlantSense](https://myplantsense.com)
-soil sensor the way the PlantSense app does: the plant name, a **Healthy /
-Needs water / Too wet** status pill, and dials for **soil moisture, light,
-temperature and humidity**, plus the battery level. It follows Home
+soil sensor the way the PlantSense app does: the plant name, its health
+(**Healthy / Fair / Warning / Needs attention**) and why, and dials for **soil
+moisture, daily light, temperature and humidity**, plus the battery level. It follows Home
 Assistant's light and dark themes.
 
 [PlantSense](https://myplantsense.com) is a WiFi soil sensor for house plants
@@ -80,20 +80,36 @@ Tap a dial to open that entity's details and history.
 |---|---|---|---|
 | `name` | string | `PlantSense` | Plant name shown in the header. |
 | `location` | string | — | Optional sub-heading, e.g. a room. |
-| `moisture` | entity id | — | Soil-moisture sensor (`%`). Drives the status pill. |
+| `moisture` | entity id | — | Soil-moisture sensor (`%`). |
 | `temperature` | entity id | — | Temperature sensor. |
 | `humidity` | entity id | — | Humidity sensor (`%`). |
 | `illuminance` | entity id | — | Light sensor (`lx`). `light` works too. |
 | `battery` | entity id | — | Battery sensor (`%`). The battery chip is hidden without it. |
-| `last_reading` | entity id | found automatically | The PlantSense integration's **Last reading** sensor. Normally found on its own from the device of the other entities. |
-| `moisture_min` | number | `15` | Below this the pill reads **Needs water** and the moisture ring turns orange. |
-| `moisture_max` | number | `60` | Above this the pill reads **Too wet**. |
+| `health` | entity id | found automatically | The PlantSense integration's **Health** sensor (integration 1.3.0+). Drives the status pill. |
+| `daily_light` | entity id | found automatically | The integration's **Daily light** sensor (1.3.0+). The light dial shows it instead of `illuminance`. |
+| `last_reading` | entity id | found automatically | The PlantSense integration's **Last reading** sensor. |
+| `moisture_min` | number | `15` | Without a Health sensor, or when set: below this the pill reads **Needs water** and the moisture ring turns orange. |
+| `moisture_max` | number | `60` | Without a Health sensor, or when set: above this the pill reads **Too wet**. |
 | `illuminance_max` | number | `20000` | Lux that fills the light ring. |
 | `temperature_min` | number | `10` (°C) / `50` (°F) | Temperature of an empty ring, in the sensor's unit. |
 | `temperature_max` | number | `35` (°C) / `95` (°F) | Temperature of a full ring, in the sensor's unit. |
 
+The integration's entities (`health`, `daily_light`, `last_reading`) are found
+on their own from the device of the other entities.
+
 A missing or unavailable entity shows `—` with an empty ring; the card never
 errors on a partly configured or offline sensor.
+
+**Status pill.** With the PlantSense integration 1.3.0 or later, the pill is the
+plant's health as the app shows it: **Healthy**, **Fair**, **Warning** or
+**Needs attention**, with the reason under it (for example "Soil moisture is
+low"). It is judged against your plant's own care ranges. The moisture ring
+turns orange when soil moisture is low or saturated, and the light dial shows
+the brightest light of the last 24 hours (**Daily light**), so it isn't empty
+at night.
+
+If you set `moisture_min` or `moisture_max`, or use ESPHome entities, the pill
+reads soil moisture against that range instead.
 
 The sub-heading's "updated … ago" is when the sensor took its last reading,
 from the integration's **Last reading** sensor (with ESPHome entities, when
@@ -101,9 +117,9 @@ Home Assistant last received a value). When the integration marks a sensor
 offline (no reading for more than 6 hours), its readings are unavailable and
 the pill reads **Offline**.
 
-> **Tune the moisture range per plant.** 15–60% suits a typical houseplant.
-> Succulents want it much lower (about 5–15%), tropicals a little higher
-> (about 25–60%). The PlantSense app shows the range for your plant.
+> **Moisture range without the integration.** 15–60% suits a typical
+> houseplant. Succulents want it much lower (about 5–15%), tropicals a little
+> higher (about 25–60%). The PlantSense app shows the range for your plant.
 
 ## Support
 
