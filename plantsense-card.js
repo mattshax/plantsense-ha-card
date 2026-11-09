@@ -3,7 +3,7 @@
  *
  * Mirrors the PlantSense mobile app: a plant name, a status pill, and four
  * conic-gradient dial gauges (soil moisture / light / temperature / humidity),
- * with a small battery chip. With the PlantSense integration (1.3.0+) the pill
+ * with a small battery chip. With the PlantSense integration (1.4.0+) the pill
  * is the plant's health as the app judges it, with the reasons under it, and
  * the light dial shows the day's peak. Reads any entity ids you give it — the PlantSense
  * integration's (sensor.<plant>_moisture, ..._temperature, ..._humidity,

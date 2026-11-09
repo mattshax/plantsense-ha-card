@@ -85,8 +85,8 @@ Tap a dial to open that entity's details and history.
 | `humidity` | entity id | — | Humidity sensor (`%`). |
 | `illuminance` | entity id | — | Light sensor (`lx`). `light` works too. |
 | `battery` | entity id | — | Battery sensor (`%`). The battery chip is hidden without it. |
-| `health` | entity id | found automatically | The PlantSense integration's **Health** sensor (integration 1.3.0+). Drives the status pill. |
-| `daily_light` | entity id | found automatically | The integration's **Daily light** sensor (1.3.0+). The light dial shows it instead of `illuminance`. |
+| `health` | entity id | found automatically | The PlantSense integration's **Health** sensor (integration 1.4.0+). Drives the status pill. |
+| `daily_light` | entity id | found automatically | The integration's **Daily light** sensor (1.4.0+). The light dial shows it instead of `illuminance`. |
 | `last_reading` | entity id | found automatically | The PlantSense integration's **Last reading** sensor. |
 | `moisture_min` | number | `15` | Without a Health sensor, or when set: below this the pill reads **Needs water** and the moisture ring turns orange. |
 | `moisture_max` | number | `60` | Without a Health sensor, or when set: above this the pill reads **Too wet**. |
@@ -100,7 +100,7 @@ on their own from the device of the other entities.
 A missing or unavailable entity shows `—` with an empty ring; the card never
 errors on a partly configured or offline sensor.
 
-**Status pill.** With the PlantSense integration 1.3.0 or later, the pill is the
+**Status pill.** With the PlantSense integration 1.4.0 or later, the pill is the
 plant's health as the app shows it: **Healthy**, **Fair**, **Warning** or
 **Needs attention**, with the reason under it (for example "Soil moisture is
 low"). It is judged against your plant's own care ranges. The moisture ring
