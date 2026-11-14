@@ -83,7 +83,7 @@ const DEFAULTS_F = {
   temperature_max: 95,
 };
 
-const VERSION = '1.3.1';
+const VERSION = '1.3.2';
 
 // The PlantSense integration's Health states (sensor.<plant>_health) → pill text + style. Fair and Warning are the
 // app's warning colour, Needs attention its danger colour (plantsense-mobile stats.ts computeHealth).

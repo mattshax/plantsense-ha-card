@@ -1,7 +1,7 @@
 # PlantSense Card
 
-[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=mattshax&repository=plantsense-ha-card&category=plugin)
-[![Validate](https://github.com/mattshax/plantsense-ha-card/actions/workflows/validate.yaml/badge.svg)](https://github.com/mattshax/plantsense-ha-card/actions/workflows/validate.yaml)
+[![Open your Home Assistant instance and open this repository in HACS.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=scietas&repository=plantsense-ha-card&category=plugin)
+[![Validate](https://github.com/scietas/plantsense-ha-card/actions/workflows/validate.yaml/badge.svg)](https://github.com/scietas/plantsense-ha-card/actions/workflows/validate.yaml)
 
 A dashboard card for Home Assistant that shows a [PlantSense](https://myplantsense.com)
 soil sensor the way the PlantSense app does: the plant name, its health
@@ -14,15 +14,15 @@ and garden beds: soil moisture, temperature, humidity and light, weeks on a
 USB-C rechargeable battery, no hub and no subscription. Don't have one yet?
 See [myplantsense.com/shop](https://myplantsense.com/shop).
 
-<img src="https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-dark.png" alt="PlantSense cards on a Home Assistant dashboard, dark theme" width="720">
+<img src="https://raw.githubusercontent.com/scietas/plantsense-ha-card/main/docs/card-dark.png" alt="PlantSense cards on a Home Assistant dashboard, dark theme" width="720">
 
-<img src="https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-light.png" alt="The same cards in the light theme" width="720">
+<img src="https://raw.githubusercontent.com/scietas/plantsense-ha-card/main/docs/card-light.png" alt="The same cards in the light theme" width="720">
 
 ## Requirements
 
 PlantSense sensors in Home Assistant, through either:
 
-- the [PlantSense integration](https://github.com/mattshax/plantsense-ha-integration)
+- the [PlantSense integration](https://github.com/scietas/plantsense-ha-integration)
   (recommended): reads your sensors from your PlantSense account, so readings
   are there even while a sensor sleeps. Entities look like
   `sensor.fiddle_leaf_fig_moisture`, named after your plant; or
@@ -124,8 +124,10 @@ the pill reads **Offline**.
 ## Support
 
 Questions and bug reports:
-<https://github.com/mattshax/plantsense-ha-card/issues>
+<https://github.com/scietas/plantsense-ha-card/issues>
 
 ## License
 
-[MIT](https://github.com/mattshax/plantsense-ha-card/blob/main/LICENSE)
+[MIT](https://github.com/scietas/plantsense-ha-card/blob/main/LICENSE)
+
+PlantSense is made by [Scietas](https://scietas.com).
