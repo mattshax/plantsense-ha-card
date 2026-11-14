@@ -14,9 +14,9 @@ and garden beds: soil moisture, temperature, humidity and light, weeks on a
 USB-C rechargeable battery, no hub and no subscription. Don't have one yet?
 See [myplantsense.com/shop](https://myplantsense.com/shop).
 
-![PlantSense cards on a Home Assistant dashboard, light theme](https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-light.png)
+<img src="https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-dark.png" alt="PlantSense cards on a Home Assistant dashboard, dark theme" width="720">
 
-![The same cards in the dark theme](https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-dark.png)
+<img src="https://raw.githubusercontent.com/mattshax/plantsense-ha-card/main/docs/card-light.png" alt="The same cards in the light theme" width="720">
 
 ## Requirements
 
